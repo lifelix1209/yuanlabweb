@@ -130,13 +130,17 @@ export function DataProvider({ children }) {
   // 删除项目
   const deleteItem = async (collectionKey, itemId) => {
     try {
+      console.log('删除中:', collectionKey, itemId);
       await deleteDoc(doc(db, collectionKey, String(itemId)));
 
+      // 同步更新本地状态
       setData(prev => {
         if (!prev) return prev;
+        const newCollection = prev[collectionKey]?.filter(item => item.id !== itemId) || [];
+        console.log('删除后数据:', newCollection);
         return {
           ...prev,
-          [collectionKey]: prev[collectionKey].filter(item => item.id !== itemId),
+          [collectionKey]: newCollection,
         };
       });
 

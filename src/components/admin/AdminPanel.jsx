@@ -98,9 +98,9 @@ export function AdminPanel() {
     setFormData({});
   };
 
-  const handleDelete = (collectionKey, id) => {
+  const handleDelete = async (collectionKey, id) => {
     if (confirm('确定要删除此项目吗？')) {
-      deleteItem(collectionKey, id);
+      await deleteItem(collectionKey, id);
     }
   };
 
