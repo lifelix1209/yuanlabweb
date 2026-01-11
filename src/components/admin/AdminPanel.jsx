@@ -39,22 +39,28 @@ export function AdminPanel() {
   };
 
   const handleSave = () => {
-    if (!editingItem) return;
-
-    if (editingItem._collectionKey === 'labInfo') {
-      updateData('labInfo', formData);
-      alert('保存成功！');
-    } else if (editingItem._isNew) {
-      // 新增
-      const { _collectionKey, _isNew, id, ...newItem } = formData;
-      addItem(_collectionKey, newItem);
-      alert('添加成功！');
-    } else {
-      updateItem(editingItem._collectionKey, editingItem.id, formData);
-      alert('保存成功！');
+    try {
+      if (editingItem._collectionKey === 'labInfo') {
+        updateData('labInfo', formData);
+        alert('保存成功！');
+      } else if (editingItem._isNew) {
+        // 新增项目
+        const { _collectionKey, _isNew, id, ...newItem } = formData;
+        addItem(_collectionKey, { ...newItem, id: Date.now() });
+        alert('添加成功！');
+      } else {
+        // 更新项目
+        const { _collectionKey, _isNew, id, ...updateItemData } = formData;
+        updateItem(editingItem._collectionKey, editingItem.id, updateItemData);
+        alert('保存成功！');
+      }
+      // 清空编辑状态
+      setEditingItem(null);
+      setFormData({});
+    } catch (error) {
+      console.error('保存失败：', error);
+      alert('保存失败：' + error.message);
     }
-    setEditingItem(null);
-    setFormData({});
   };
 
   const handleCancel = () => {
@@ -70,21 +76,23 @@ export function AdminPanel() {
 
   const handleAddNew = () => {
     const collectionKey = activeTab;
-    let newItem = { id: Date.now() };
+    // 使用时间戳 + 随机数生成唯一 ID
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    let newItem = { id: newId };
 
     // 根据类型设置默认字段
     if (collectionKey === 'membersData') {
       newItem = { ...newItem, name: '', role: '', avatar: '', bio: '', tags: [] };
     } else if (collectionKey === 'alumniData') {
-      newItem = { ...newItem, name: '', role: '', startYear: 2024, endYear: 2025, destination: '', note: '' };
+      newItem = { ...newItem, name: '', role: '', startYear: new Date().getFullYear(), endYear: new Date().getFullYear() + 1, destination: '', note: '' };
     } else if (collectionKey === 'publicationsData') {
-      newItem = { ...newItem, title: '', authors: '', conference: '', year: '2024', link: '', abstract: '' };
+      newItem = { ...newItem, title: '', authors: '', conference: '', year: new Date().getFullYear().toString(), link: '', abstract: '' };
     } else if (collectionKey === 'retreatData') {
       newItem = { ...newItem, src: '', alt: '', title: '', desc: '' };
     }
 
     setEditingItem({ ...newItem, _collectionKey: collectionKey, _isNew: true });
-    setFormData({ ...newItem, _isNew: true });
+    setFormData({ ...newItem, _collectionKey: collectionKey, _isNew: true });
   };
 
   const handleFileImport = (e) => {

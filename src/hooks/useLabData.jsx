@@ -73,12 +73,15 @@ export function DataProvider({ children }) {
 
   // 添加新项目
   const addItem = (collectionKey, newItem) => {
-    const id = Date.now();
-    setData(prev => ({
-      ...prev,
-      [collectionKey]: [...prev[collectionKey], { ...newItem, id }],
-    }));
-    setIsDirty(true);
+    setData(prev => {
+      const newData = {
+        ...prev,
+        [collectionKey]: [...prev[collectionKey], newItem],
+      };
+      // 立即保存到 localStorage
+      localStorage.setItem('labData', JSON.stringify(newData));
+      return newData;
+    });
   };
 
   // 删除项目
