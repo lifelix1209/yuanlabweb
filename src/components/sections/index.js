@@ -1,0 +1,8 @@
+export { Navbar } from './Navbar';
+export { Hero } from './Hero';
+export { Research } from './Research';
+export { Members } from './Members';
+export { Alumni } from './Alumni';
+export { Publications } from './Publications';
+export { LabRetreatGallery } from './LabRetreatGallery';
+export { Contact } from './Contact';
