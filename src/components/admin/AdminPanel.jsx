@@ -320,6 +320,21 @@ function CollectionEditor({ collectionKey, data, editing, formData, setFormData,
     setFormData({ ...formData, tags: value.split(',').map(t => t.trim()).filter(Boolean) });
   };
 
+  const handleFileUpload = (key, e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setFormData({ ...formData, [key]: ev.target?.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const isImageField = (key) => {
+    return key === 'avatar' || key === 'src';
+  };
+
   return (
     <div>
       <div className="flex justify-between mb-4">
@@ -354,6 +369,33 @@ function CollectionEditor({ collectionKey, data, editing, formData, setFormData,
                       placeholder="用逗号分隔"
                       className="w-full bg-sci-card text-white rounded-xl p-3"
                     />
+                  ) : isImageField(key) ? (
+                    <div className="space-y-2">
+                      {value && (
+                        <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-600">
+                          <img src={value} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={value || ''}
+                          onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                          placeholder="输入图片链接或上传文件"
+                          className="flex-1 bg-sci-card text-white rounded-xl p-3"
+                        />
+                        <label className="flex items-center gap-2 px-4 py-2 bg-sci-gradient text-white rounded-lg cursor-pointer hover:bg-sci-gradient hover:opacity-90 transition-opacity">
+                          <Upload size={16} />
+                          上传
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(key, e)}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
                   ) : (
                     <input
                       type={key === 'startYear' || key === 'endYear' || key === 'year' ? 'number' : 'text'}
