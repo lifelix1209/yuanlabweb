@@ -113,16 +113,17 @@ export function DataProvider({ children }) {
   const updateItem = async (collectionKey, itemId, updates) => {
     try {
       console.log('📝 更新项目:', { collectionKey, itemId, updates });
-      
-      // ✅ 直接使用 itemId，不进行类型转换
-      const docRef = doc(db, collectionKey, itemId);
+
+      // ✅ 确保 itemId 是字符串
+      const docId = String(itemId);
+      const docRef = doc(db, collectionKey, docId);
       await updateDoc(docRef, updates);
-      
+
       console.log('✅ 项目更新成功');
     } catch (e) {
       console.error('❌ 更新失败:', e);
       console.error('错误详情:', { collectionKey, itemId, error: e.message });
-      throw e; // ✅ 抛出错误
+      throw e;
     }
   };
 
@@ -130,49 +131,51 @@ export function DataProvider({ children }) {
   const addItem = async (collectionKey, newItem) => {
     try {
       console.log('➕ 添加项目:', { collectionKey, newItem });
-      
-      const docRef = await addDoc(collection(db, collectionKey), newItem);
-      
-      console.log('✅ 项目添加成功，ID:', docRef.id);
+
+      // ✅ 移除可能存在的 id 字段，使用 Firestore 自动生成的 ID
+      const { id, ...itemWithoutId } = newItem;
+
+      const docRef = await addDoc(collection(db, collectionKey), itemWithoutId);
+
+      console.log('✅ 项目添加成功，Firestore 生成的 ID:', docRef.id);
       return docRef.id;
     } catch (e) {
       console.error('❌ 添加失败:', e);
       console.error('错误详情:', { collectionKey, error: e.message });
-      throw e; // ✅ 抛出错误
+      throw e;
     }
   };
 
-  // ✅ 删除项目（关键修复）
+  // ✅ 删除项目
   const deleteItem = async (collectionKey, itemId) => {
     try {
-      console.log('🗑️ 准备删除:', { collectionKey, itemId });
-      console.log('📦 itemId 类型:', typeof itemId);
-      
-      // ✅ 直接使用 itemId，不进行 String() 转换
-      const docRef = doc(db, collectionKey, itemId);
-      
-      console.log('🔗 文档路径:', docRef.path);
-      
+      console.log('🗑️ 准备删除:', { collectionKey, itemId, type: typeof itemId });
+
+      // ✅ 确保 itemId 是字符串
+      const docId = String(itemId);
+      console.log('🔀 转换后:', docId, typeof docId);
+
+      const docRef = doc(db, collectionKey, docId);
       await deleteDoc(docRef);
-      
-      console.log('✅ 项目删除成功');
-      
-      // ✅ 立即更新本地状态（虽然 onSnapshot 也会更新，但这样更快）
+
+      console.log('✅ 删除成功');
+
+      // ✅ 立即更新本地状态，统一类型比较
       setData(prev => ({
         ...prev,
-        [collectionKey]: prev[collectionKey].filter(item => item.id !== itemId)
+        [collectionKey]: prev[collectionKey].filter(item =>
+          String(item.id) !== String(itemId)
+        )
       }));
-      
+
     } catch (e) {
       console.error('❌ 删除失败:', e);
-      console.error('错误详情:', { 
-        collectionKey, 
-        itemId, 
-        itemIdType: typeof itemId,
-        error: e.message,
-        errorCode: e.code 
+      console.error('错误详情:', {
+        collectionKey,
+        itemId,
+        error: e.message
       });
-      throw e; // ✅ 抛出错误
+      throw e;
     }
   };
 
