@@ -351,7 +351,7 @@ function CollectionEditor({ collectionKey, data, editing, formData, setFormData,
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.entries(formData).map(([key, value]) => {
-              if (key === 'id' || key === '_collectionKey') return null;
+              if (key === 'id' || key === '_collectionKey' || key === '_isNew') return null;
               return (
                 <div key={key}>
                   <label className="text-xs text-slate-500 uppercase mb-1 block">{key}</label>
