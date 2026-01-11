@@ -1,4 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { labInfo as defaultLabInfo } from '../data/labInfo.js';
 import { membersData as defaultMembers } from '../data/membersData.js';
 import { alumniData as defaultAlumni } from '../data/alumniData.js';
@@ -17,86 +19,154 @@ const defaultData = {
   retreatData: defaultRetreat,
 };
 
-// 从 localStorage 加载数据
-const loadFromStorage = () => {
-  try {
-    const stored = localStorage.getItem('labData');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Failed to load data from storage:', e);
-  }
-  return null;
-};
-
-// 保存数据到 localStorage
-const saveToStorage = (data) => {
-  try {
-    localStorage.setItem('labData', JSON.stringify(data));
-  } catch (e) {
-    console.error('Failed to save data to storage:', e);
-  }
-};
-
 // Data Provider
 export function DataProvider({ children }) {
-  const [data, setData] = useState(() => loadFromStorage() || defaultData);
-  const [isDirty, setIsDirty] = useState(false);
+  const [data, setData] = useState(defaultData);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // 从 Firestore 加载数据
   useEffect(() => {
-    if (isDirty) {
-      saveToStorage(data);
-      setIsDirty(false);
-    }
-  }, [data, isDirty]);
+    const loadData = async () => {
+      try {
+        setLoading(true);
 
-  // 更新数据
-  const updateData = (key, value) => {
-    setData(prev => ({
-      ...prev,
-      [key]: value,
-    }));
-    setIsDirty(true);
+        // 加载 labInfo
+        const labInfoDoc = await getDoc(doc(db, 'lab', 'info'));
+        const labInfoData = labInfoDoc.exists() ? labInfoDoc.data() : defaultLabInfo;
+
+        // 加载集合数据
+        const collections = ['membersData', 'alumniData', 'publicationsData', 'retreatData'];
+        const collectionsData = {};
+
+        for (const collectionName of collections) {
+          const snapshot = await getDocs(collection(db, collectionName));
+          collectionsData[collectionName] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        }
+
+        setData({
+          labInfo: labInfoData,
+          ...collectionsData
+        });
+
+        console.log('数据从云端加载成功');
+      } catch (e) {
+        console.error('加载数据失败:', e);
+        setError(e.message);
+        // 失败时使用默认数据
+        setData(defaultData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // 更新实验室信息
+  const updateData = async (key, value) => {
+    try {
+      if (key === 'labInfo') {
+        await setDoc(doc(db, 'lab', 'info'), value);
+        setData(prev => ({ ...prev, labInfo: value }));
+        console.log('实验室信息已保存到云端');
+      }
+    } catch (e) {
+      console.error('保存失败:', e);
+      alert('保存失败：' + e.message);
+    }
   };
 
   // 更新单个项目
-  const updateItem = (collectionKey, itemId, updates) => {
-    setData(prev => ({
-      ...prev,
-      [collectionKey]: prev[collectionKey].map(item =>
-        item.id === itemId ? { ...item, ...updates } : item
-      ),
-    }));
-    setIsDirty(true);
+  const updateItem = async (collectionKey, itemId, updates) => {
+    try {
+      const itemRef = doc(db, collectionKey, String(itemId));
+      await updateDoc(itemRef, updates);
+
+      setData(prev => ({
+        ...prev,
+        [collectionKey]: prev[collectionKey].map(item =>
+          item.id === itemId ? { ...item, ...updates } : item
+        ),
+      }));
+
+      console.log('项目已更新到云端');
+    } catch (e) {
+      console.error('更新失败:', e);
+      alert('更新失败：' + e.message);
+    }
   };
 
   // 添加新项目
-  const addItem = (collectionKey, newItem) => {
-    setData(prev => {
-      const newData = {
+  const addItem = async (collectionKey, newItem) => {
+    try {
+      // 添加到 Firestore
+      const docRef = await addDoc(collection(db, collectionKey), newItem);
+
+      // 更新本地状态（使用 Firestore 生成的 ID）
+      const itemWithId = { ...newItem, id: docRef.id };
+      setData(prev => ({
         ...prev,
-        [collectionKey]: [...prev[collectionKey], newItem],
-      };
-      // 立即保存到 localStorage
-      localStorage.setItem('labData', JSON.stringify(newData));
-      return newData;
-    });
+        [collectionKey]: [...prev[collectionKey], itemWithId],
+      }));
+
+      console.log('新项目已添加到云端，ID:', docRef.id);
+    } catch (e) {
+      console.error('添加失败:', e);
+      alert('添加失败：' + e.message);
+      throw e;
+    }
   };
 
   // 删除项目
-  const deleteItem = (collectionKey, itemId) => {
-    setData(prev => ({
-      ...prev,
-      [collectionKey]: prev[collectionKey].filter(item => item.id !== itemId),
-    }));
-    setIsDirty(true);
+  const deleteItem = async (collectionKey, itemId) => {
+    try {
+      await deleteDoc(doc(db, collectionKey, String(itemId)));
+
+      setData(prev => ({
+        ...prev,
+        [collectionKey]: prev[collectionKey].filter(item => item.id !== itemId),
+      }));
+
+      console.log('项目已从云端删除');
+    } catch (e) {
+      console.error('删除失败:', e);
+      alert('删除失败：' + e.message);
+    }
   };
 
   // 重置为默认数据
-  const resetData = () => {
-    setData(defaultData);
-    setIsDirty(true);
+  const resetData = async () => {
+    if (!confirm('确定要重置所有数据吗？此操作不可恢复！')) return;
+
+    try {
+      // 重置 labInfo
+      await setDoc(doc(db, 'lab', 'info'), defaultLabInfo);
+
+      // 清空并重置集合
+      const collections = ['membersData', 'alumniData', 'publicationsData', 'retreatData'];
+
+      for (const collectionName of collections) {
+        // 删除现有数据
+        const snapshot = await getDocs(collection(db, collectionName));
+        await Promise.all(snapshot.docs.map(doc => deleteDoc(doc.ref)));
+
+        // 添加默认数据
+        const defaultItems = defaultData[collectionName];
+        await Promise.all(defaultItems.map(item =>
+          addDoc(collection(db, collectionName), item)
+        ));
+      }
+
+      setData(defaultData);
+      alert('数据已重置为默认值');
+    } catch (e) {
+      console.error('重置失败:', e);
+      alert('重置失败：' + e.message);
+    }
   };
 
   // 导出数据为 JSON
@@ -110,14 +180,36 @@ export function DataProvider({ children }) {
     URL.revokeObjectURL(url);
   };
 
-  // 导入数据
-  const importData = (jsonString) => {
+  // 导入数据（上传到云端）
+  const importData = async (jsonString) => {
     try {
       const imported = JSON.parse(jsonString);
+
+      // 上传 labInfo
+      if (imported.labInfo) {
+        await setDoc(doc(db, 'lab', 'info'), imported.labInfo);
+      }
+
+      // 上传集合数据
+      const collections = ['membersData', 'alumniData', 'publicationsData', 'retreatData'];
+
+      for (const collectionName of collections) {
+        if (imported[collectionName]) {
+          // 清空现有数据
+          const snapshot = await getDocs(collection(db, collectionName));
+          await Promise.all(snapshot.docs.map(doc => deleteDoc(doc.ref)));
+
+          // 添加新数据
+          await Promise.all(imported[collectionName].map(item =>
+            addDoc(collection(db, collectionName), item)
+          ));
+        }
+      }
+
       setData(imported);
-      setIsDirty(true);
       return { success: true };
     } catch (e) {
+      console.error('导入失败:', e);
       return { success: false, error: e.message };
     }
   };
@@ -125,6 +217,8 @@ export function DataProvider({ children }) {
   return (
     <DataContext.Provider value={{
       data,
+      loading,
+      error,
       updateData,
       updateItem,
       addItem,
@@ -132,7 +226,6 @@ export function DataProvider({ children }) {
       resetData,
       exportData,
       importData,
-      isDirty,
     }}>
       {children}
     </DataContext.Provider>

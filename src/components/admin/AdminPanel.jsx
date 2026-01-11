@@ -16,7 +16,7 @@ const tabs = [
 ];
 
 export function AdminPanel() {
-  const { data, updateData, updateItem, addItem, deleteItem, resetData, exportData, importData } = useLabData();
+  const { data, loading, error, updateData, updateItem, addItem, deleteItem, resetData, exportData, importData } = useLabData();
   const [activeTab, setActiveTab] = useState('labInfo');
   const [editingItem, setEditingItem] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -28,6 +28,36 @@ export function AdminPanel() {
   // 表单状态
   const [formData, setFormData] = useState({});
 
+  // 加载状态
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-sci-darker flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-sci-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">正在从云端加载数据...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <div className="min-h-screen bg-sci-darker flex items-center justify-center">
+        <div className="bg-red-500/20 border border-red-500 rounded-xl p-6 max-w-md">
+          <h2 className="text-red-500 text-xl font-bold mb-2">加载失败</h2>
+          <p className="text-white">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+          >
+            重新加载
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
     navigate('/login');
@@ -38,20 +68,20 @@ export function AdminPanel() {
     setFormData(item);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       if (editingItem._collectionKey === 'labInfo') {
-        updateData('labInfo', formData);
+        await updateData('labInfo', formData);
         alert('保存成功！');
       } else if (editingItem._isNew) {
         // 新增项目
         const { _collectionKey, _isNew, id, ...newItem } = formData;
-        addItem(_collectionKey, { ...newItem, id: Date.now() });
+        await addItem(_collectionKey, { ...newItem, id: Date.now() });
         alert('添加成功！');
       } else {
         // 更新项目
         const { _collectionKey, _isNew, id, ...updateItemData } = formData;
-        updateItem(editingItem._collectionKey, editingItem.id, updateItemData);
+        await updateItem(editingItem._collectionKey, editingItem.id, updateItemData);
         alert('保存成功！');
       }
       // 清空编辑状态
