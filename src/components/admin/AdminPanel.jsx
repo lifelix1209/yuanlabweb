@@ -41,12 +41,12 @@ export function AdminPanel() {
   const handleSave = () => {
     if (editingItem._collectionKey === 'labInfo') {
       updateData('labInfo', formData);
-    } else if (editingItem.id) {
-      updateItem(editingItem._collectionKey, editingItem.id, formData);
-    } else {
+    } else if (editingItem._isNew) {
       // 新增
-      const { _collectionKey, id, ...newItem } = formData;
+      const { _collectionKey, _isNew, id, ...newItem } = formData;
       addItem(_collectionKey, newItem);
+    } else {
+      updateItem(editingItem._collectionKey, editingItem.id, formData);
     }
     setEditingItem(null);
   };
@@ -77,8 +77,8 @@ export function AdminPanel() {
       newItem = { ...newItem, src: '', alt: '', title: '', desc: '' };
     }
 
-    setEditingItem({ ...newItem, _collectionKey: collectionKey });
-    setFormData(newItem);
+    setEditingItem({ ...newItem, _collectionKey: collectionKey, _isNew: true });
+    setFormData({ ...newItem, _isNew: true });
   };
 
   const handleFileImport = (e) => {
