@@ -39,16 +39,22 @@ export function AdminPanel() {
   };
 
   const handleSave = () => {
+    if (!editingItem) return;
+
     if (editingItem._collectionKey === 'labInfo') {
       updateData('labInfo', formData);
+      alert('保存成功！');
     } else if (editingItem._isNew) {
       // 新增
       const { _collectionKey, _isNew, id, ...newItem } = formData;
       addItem(_collectionKey, newItem);
+      alert('添加成功！');
     } else {
       updateItem(editingItem._collectionKey, editingItem.id, formData);
+      alert('保存成功！');
     }
     setEditingItem(null);
+    setFormData({});
   };
 
   const handleCancel = () => {
