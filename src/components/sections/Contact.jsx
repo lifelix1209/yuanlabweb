@@ -2,7 +2,18 @@ import { Mail, MapPin, Github, ExternalLink } from 'lucide-react';
 import { useLabData } from '../../hooks/useLabData';
 
 export function Contact() {
-  const { data: { labInfo } } = useLabData();
+  const { data, loading } = useLabData();
+  const labInfo = data?.labInfo || {};
+
+  if (loading) {
+    return (
+      <section id="contact" className="py-24 bg-sci-darker text-white relative overflow-hidden">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          <div className="text-slate-400">加载中...</div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

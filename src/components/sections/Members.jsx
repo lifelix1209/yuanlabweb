@@ -2,7 +2,23 @@ import { useLabData } from '../../hooks/useLabData';
 import { Section, SectionHeader, Tag } from '../ui';
 
 export function Members() {
-  const { data: { membersData } } = useLabData();
+  const { data, loading } = useLabData();
+  const membersData = data?.membersData || [];
+
+  if (loading) {
+    return (
+      <Section id="members" className="bg-sci-dark relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <SectionHeader
+            title="实验室成员"
+            description="我们来自发育生物学、干细胞、转化医学与生物信息等方向，欢迎对相关研究感兴趣的同学加入 🙌"
+            className="text-white"
+          />
+          <div className="text-center text-slate-400 py-12">加载中...</div>
+        </div>
+      </Section>
+    );
+  }
 
   return (
     <Section id="members" className="bg-sci-dark relative">

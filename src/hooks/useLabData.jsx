@@ -21,7 +21,7 @@ const defaultData = {
 
 // Data Provider
 export function DataProvider({ children }) {
-  const [data, setData] = useState(defaultData);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -71,7 +71,7 @@ export function DataProvider({ children }) {
     try {
       if (key === 'labInfo') {
         await setDoc(doc(db, 'lab', 'info'), value);
-        setData(prev => ({ ...prev, labInfo: value }));
+        setData(prev => prev ? ({ ...prev, labInfo: value }) : { ...defaultData, labInfo: value });
         console.log('实验室信息已保存到云端');
       }
     } catch (e) {
@@ -86,12 +86,15 @@ export function DataProvider({ children }) {
       const itemRef = doc(db, collectionKey, String(itemId));
       await updateDoc(itemRef, updates);
 
-      setData(prev => ({
-        ...prev,
-        [collectionKey]: prev[collectionKey].map(item =>
-          item.id === itemId ? { ...item, ...updates } : item
-        ),
-      }));
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [collectionKey]: prev[collectionKey].map(item =>
+            item.id === itemId ? { ...item, ...updates } : item
+          ),
+        };
+      });
 
       console.log('项目已更新到云端');
     } catch (e) {
@@ -108,10 +111,13 @@ export function DataProvider({ children }) {
 
       // 更新本地状态（使用 Firestore 生成的 ID）
       const itemWithId = { ...newItem, id: docRef.id };
-      setData(prev => ({
-        ...prev,
-        [collectionKey]: [...prev[collectionKey], itemWithId],
-      }));
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [collectionKey]: [...prev[collectionKey], itemWithId],
+        };
+      });
 
       console.log('新项目已添加到云端，ID:', docRef.id);
     } catch (e) {
@@ -126,10 +132,13 @@ export function DataProvider({ children }) {
     try {
       await deleteDoc(doc(db, collectionKey, String(itemId)));
 
-      setData(prev => ({
-        ...prev,
-        [collectionKey]: prev[collectionKey].filter(item => item.id !== itemId),
-      }));
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [collectionKey]: prev[collectionKey].filter(item => item.id !== itemId),
+        };
+      });
 
       console.log('项目已从云端删除');
     } catch (e) {
@@ -143,6 +152,8 @@ export function DataProvider({ children }) {
     if (!confirm('确定要重置所有数据吗？此操作不可恢复！')) return;
 
     try {
+      setLoading(true);
+
       // 重置 labInfo
       await setDoc(doc(db, 'lab', 'info'), defaultLabInfo);
 
@@ -166,11 +177,14 @@ export function DataProvider({ children }) {
     } catch (e) {
       console.error('重置失败:', e);
       alert('重置失败：' + e.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   // 导出数据为 JSON
   const exportData = () => {
+    if (!data) return;
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

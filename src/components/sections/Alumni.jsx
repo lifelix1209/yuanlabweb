@@ -4,11 +4,22 @@ import { useLabData } from '../../hooks/useLabData';
 import { Section, SectionHeader, Input, Select } from '../ui';
 
 export function Alumni() {
-  const { data: { alumniData } } = useLabData();
+  const { data, loading } = useLabData();
+  const alumniData = data?.alumniData || [];
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("全部");
   const [sortKey, setSortKey] = useState("endDesc");
   const [openId, setOpenId] = useState(null);
+
+  if (loading) {
+    return (
+      <Section id="alumni" className="bg-sci-dark relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center text-slate-400 py-12">加载中...</div>
+        </div>
+      </Section>
+    );
+  }
 
   const roles = ["全部", ...Array.from(new Set(alumniData.map((a) => a.role)))];
 

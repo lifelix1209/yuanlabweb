@@ -5,7 +5,8 @@ import { useLabData } from '../../hooks/useLabData';
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { data: { labInfo } } = useLabData();
+  const { data } = useLabData();
+  const labInfo = data?.labInfo || {};
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);

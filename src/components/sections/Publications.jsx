@@ -3,7 +3,19 @@ import { useLabData } from '../../hooks/useLabData';
 import { Section } from '../ui';
 
 export function Publications() {
-  const { data: { publicationsData, labInfo } } = useLabData();
+  const { data, loading } = useLabData();
+  const publicationsData = data?.publicationsData || [];
+  const labInfo = data?.labInfo || {};
+
+  if (loading) {
+    return (
+      <Section id="publications" className="bg-sci-dark">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center text-slate-400 py-12">加载中...</div>
+        </div>
+      </Section>
+    );
+  }
 
   return (
     <Section id="publications" className="bg-sci-dark">

@@ -3,7 +3,16 @@ import { useLabData } from '../../hooks/useLabData';
 import { Button } from '../ui';
 
 export function Hero() {
-  const { data: { labInfo } } = useLabData();
+  const { data, loading } = useLabData();
+  const labInfo = data?.labInfo || {};
+
+  if (loading) {
+    return (
+      <section id="home" className="min-h-screen flex flex-col justify-center items-center relative pt-24 overflow-hidden grid-bg">
+        <div className="text-center text-slate-400">加载中...</div>
+      </section>
+    );
+  }
 
   return (
     <section

@@ -4,11 +4,22 @@ import { useLabData } from '../../hooks/useLabData';
 import { Section, SectionHeader } from '../ui';
 
 export function LabRetreatGallery() {
-  const { data: { retreatData } } = useLabData();
+  const { data, loading } = useLabData();
+  const retreatData = data?.retreatData || [];
   const [active, setActive] = useState(0);
 
+  if (loading) {
+    return (
+      <Section id="retreat" className="bg-sci-dark relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center text-slate-400 py-12">加载中...</div>
+        </div>
+      </Section>
+    );
+  }
+
   const total = retreatData.length;
-  const current = retreatData[active];
+  const current = retreatData[active] || {};
 
   const goPrev = () => setActive((i) => (i - 1 + total) % total);
   const goNext = () => setActive((i) => (i + 1) % total);
@@ -21,6 +32,22 @@ export function LabRetreatGallery() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [total]);
+
+  // 如果没有数据，显示空状态
+  if (total === 0) {
+    return (
+      <Section id="retreat" className="bg-sci-dark relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <SectionHeader
+            title="Lab Retreat"
+            description="记录我们的年度 Retreat：学术交流、团队建设与灵感碰撞 😊"
+            className="text-white"
+          />
+          <div className="text-center text-slate-400 py-12">暂无照片</div>
+        </div>
+      </Section>
+    );
+  }
 
   return (
     <Section id="retreat" className="bg-sci-dark relative">
