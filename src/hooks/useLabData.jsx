@@ -7,10 +7,8 @@ import { alumniData as defaultAlumni } from '../data/alumniData.js';
 import { publicationsData as defaultPublications } from '../data/publicationsData.js';
 import { retreatData as defaultRetreat } from '../data/retreatData.js';
 
-// Data Context
 const DataContext = createContext(null);
 
-// Data Provider
 export function DataProvider({ children }) {
   const [data, setData] = useState({
     labInfo: {},
@@ -26,7 +24,7 @@ export function DataProvider({ children }) {
   useEffect(() => {
     const unsubscribers = [];
     let loadedCollections = 0;
-    const totalCollections = 5; // labInfo + 4 个集合
+    const totalCollections = 5;
 
     // 监听 labInfo
     const labInfoUnsub = onSnapshot(
@@ -35,17 +33,13 @@ export function DataProvider({ children }) {
         if (snapshot.exists()) {
           console.log('📊 labInfo 加载完成');
           setData(prev => ({ ...prev, labInfo: snapshot.data() }));
-          loadedCollections++;
-          if (loadedCollections === totalCollections) {
-            setLoading(false);
-          }
         } else {
           console.log('⚠️ labInfo 不存在，使用默认值');
           setData(prev => ({ ...prev, labInfo: defaultLabInfo }));
-          loadedCollections++;
-          if (loadedCollections === totalCollections) {
-            setLoading(false);
-          }
+        }
+        loadedCollections++;
+        if (loadedCollections === totalCollections) {
+          setLoading(false);
         }
       },
       (err) => {
@@ -61,12 +55,27 @@ export function DataProvider({ children }) {
       const unsub = onSnapshot(
         collection(db, collectionName),
         (snapshot) => {
-          const items = snapshot.docs.map(d => ({ 
-            id: d.id, 
-            ...d.data() 
-          }));
+          console.log(`\n📊 ${collectionName} 数据快照:`);
           
-          console.log(`📊 ${collectionName} 加载完成:`, items.length, '条数据');
+          const items = snapshot.docs.map(d => {
+            const docData = d.data();
+            const firestoreId = d.id; // Firestore 自动生成的文档 ID
+            
+            console.log(`  📄 文档:`, {
+              'Firestore ID': firestoreId,
+              '数据中的 id': docData.id,
+              '数据': docData
+            });
+            
+            // ✅ 关键：始终使用 Firestore 文档 ID，忽略数据中的 id 字段
+            return {
+              ...docData,
+              id: firestoreId, // 用 Firestore ID 覆盖数据中的 id
+              _dataId: docData.id, // 保存原始 id（调试用）
+            };
+          });
+          
+          console.log(`✅ ${collectionName} 最终数据:`, items.length, '条');
           
           setData(prev => ({ 
             ...prev, 
@@ -88,7 +97,6 @@ export function DataProvider({ children }) {
       unsubscribers.push(unsub);
     });
 
-    // 清理函数
     return () => {
       console.log('🧹 清理监听器');
       unsubscribers.forEach(unsub => unsub());
@@ -105,24 +113,35 @@ export function DataProvider({ children }) {
       }
     } catch (e) {
       console.error('❌ 保存失败:', e);
-      throw e; // ✅ 抛出错误
+      throw e;
     }
   };
 
   // ✅ 更新单个项目
   const updateItem = async (collectionKey, itemId, updates) => {
     try {
-      console.log('📝 更新项目:', { collectionKey, itemId, updates });
-
+      console.log('📝 更新项目:', { 
+        collectionKey, 
+        itemId, 
+        itemIdType: typeof itemId,
+        updates 
+      });
+      
       // ✅ 确保 itemId 是字符串
       const docId = String(itemId);
+      console.log('🔗 文档路径:', `${collectionKey}/${docId}`);
+      
       const docRef = doc(db, collectionKey, docId);
-      await updateDoc(docRef, updates);
-
+      
+      // ✅ 不要在 updates 中包含 id 字段
+      const { id, _dataId, ...cleanUpdates } = updates;
+      
+      await updateDoc(docRef, cleanUpdates);
+      
       console.log('✅ 项目更新成功');
     } catch (e) {
       console.error('❌ 更新失败:', e);
-      console.error('错误详情:', { collectionKey, itemId, error: e.message });
+      console.error('错误详情:', e.message, e.code);
       throw e;
     }
   };
@@ -131,50 +150,59 @@ export function DataProvider({ children }) {
   const addItem = async (collectionKey, newItem) => {
     try {
       console.log('➕ 添加项目:', { collectionKey, newItem });
-
-      // ✅ 移除可能存在的 id 字段，使用 Firestore 自动生成的 ID
-      const { id, ...itemWithoutId } = newItem;
-
-      const docRef = await addDoc(collection(db, collectionKey), itemWithoutId);
-
+      
+      // ✅ 移除所有 id 相关字段，让 Firestore 自动生成
+      const { id, _dataId, _collectionKey, _isNew, ...cleanItem } = newItem;
+      
+      console.log('🧹 清理后的数据:', cleanItem);
+      
+      const docRef = await addDoc(collection(db, collectionKey), cleanItem);
+      
       console.log('✅ 项目添加成功，Firestore 生成的 ID:', docRef.id);
       return docRef.id;
     } catch (e) {
       console.error('❌ 添加失败:', e);
-      console.error('错误详情:', { collectionKey, error: e.message });
+      console.error('错误详情:', e.message, e.code);
       throw e;
     }
   };
 
-  // ✅ 删除项目
+  // ✅ 删除项目（关键修复）
   const deleteItem = async (collectionKey, itemId) => {
     try {
-      console.log('🗑️ 准备删除:', { collectionKey, itemId, type: typeof itemId });
-
+      console.log('\n🗑️ ===== 开始删除 =====');
+      console.log('集合:', collectionKey);
+      console.log('itemId:', itemId);
+      console.log('itemId 类型:', typeof itemId);
+      
       // ✅ 确保 itemId 是字符串
       const docId = String(itemId);
-      console.log('🔀 转换后:', docId, typeof docId);
-
+      console.log('转换后的 docId:', docId);
+      
+      // ✅ 构建文档引用
       const docRef = doc(db, collectionKey, docId);
+      console.log('文档完整路径:', docRef.path);
+      
+      // ✅ 执行删除
       await deleteDoc(docRef);
-
-      console.log('✅ 删除成功');
-
-      // ✅ 立即更新本地状态，统一类型比较
+      
+      console.log('✅ Firestore 删除操作完成');
+      console.log('===== 删除结束 =====\n');
+      
+      // ✅ 立即更新本地状态
       setData(prev => ({
         ...prev,
-        [collectionKey]: prev[collectionKey].filter(item =>
-          String(item.id) !== String(itemId)
-        )
+        [collectionKey]: prev[collectionKey].filter(item => item.id !== docId)
       }));
-
+      
     } catch (e) {
-      console.error('❌ 删除失败:', e);
-      console.error('错误详情:', {
-        collectionKey,
-        itemId,
-        error: e.message
-      });
+      console.error('\n❌ ===== 删除失败 =====');
+      console.error('错误类型:', e.name);
+      console.error('错误信息:', e.message);
+      console.error('错误代码:', e.code);
+      console.error('完整错误:', e);
+      console.error('尝试删除的路径:', `${collectionKey}/${String(itemId)}`);
+      console.error('===== 错误结束 =====\n');
       throw e;
     }
   };
@@ -197,25 +225,23 @@ export function DataProvider({ children }) {
       console.log('📥 开始导入数据');
       const imported = JSON.parse(jsonString);
 
-      // 上传 labInfo
       if (imported.labInfo) {
         await setDoc(doc(db, 'lab', 'info'), imported.labInfo);
       }
 
-      // 上传集合数据
       const collections = ['membersData', 'alumniData', 'publicationsData', 'retreatData'];
 
       for (const collectionName of collections) {
         if (imported[collectionName]) {
-          // 先删除现有数据
           const snapshot = await getDocs(collection(db, collectionName));
           await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
           
-          // 添加新数据
+          // ✅ 移除所有 id 字段
           await Promise.all(
-            imported[collectionName].map(item => 
-              addDoc(collection(db, collectionName), item)
-            )
+            imported[collectionName].map(item => {
+              const { id, _dataId, ...cleanItem } = item;
+              return addDoc(collection(db, collectionName), cleanItem);
+            })
           );
         }
       }
@@ -236,10 +262,8 @@ export function DataProvider({ children }) {
       console.log('🔄 开始重置数据');
       setLoading(true);
 
-      // 重置 labInfo
       await setDoc(doc(db, 'lab', 'info'), defaultLabInfo);
 
-      // 重置集合数据
       const collections = ['membersData', 'alumniData', 'publicationsData', 'retreatData'];
       const defaultCollections = {
         membersData: defaultMembers,
@@ -249,15 +273,15 @@ export function DataProvider({ children }) {
       };
 
       for (const collectionName of collections) {
-        // 删除现有数据
         const snapshot = await getDocs(collection(db, collectionName));
         await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
         
-        // 添加默认数据
+        // ✅ 移除所有 id 字段
         await Promise.all(
-          defaultCollections[collectionName].map(item => 
-            addDoc(collection(db, collectionName), item)
-          )
+          defaultCollections[collectionName].map(item => {
+            const { id, ...cleanItem } = item;
+            return addDoc(collection(db, collectionName), cleanItem);
+          })
         );
       }
 
@@ -289,7 +313,6 @@ export function DataProvider({ children }) {
   );
 }
 
-// 使用数据的 Hook
 export function useLabData() {
   const context = useContext(DataContext);
   if (!context) {
