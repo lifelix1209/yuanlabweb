@@ -11,17 +11,10 @@ export function Alumni() {
   const [sortKey, setSortKey] = useState("endDesc");
   const [openId, setOpenId] = useState(null);
 
-  if (loading) {
-    return (
-      <Section id="alumni" className="bg-sci-dark relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center text-slate-400 py-12">加载中...</div>
-        </div>
-      </Section>
-    );
-  }
-
-  const roles = ["全部", ...Array.from(new Set(alumniData.map((a) => a.role)))];
+  // 所有 hooks 必须在条件判断之前调用
+  const roles = useMemo(() => {
+    return ["全部", ...Array.from(new Set(alumniData.map((a) => a.role)))];
+  }, [alumniData]);
 
   const filtered = useMemo(() => {
     return alumniData
@@ -43,6 +36,16 @@ export function Alumni() {
         return b.endYear - a.endYear;
       });
   }, [alumniData, roleFilter, query, sortKey]);
+
+  if (loading) {
+    return (
+      <Section id="alumni" className="bg-sci-dark relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center text-slate-400 py-12">加载中...</div>
+        </div>
+      </Section>
+    );
+  }
 
   return (
     <Section id="alumni" className="bg-sci-dark relative">

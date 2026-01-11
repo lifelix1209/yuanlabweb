@@ -8,6 +8,23 @@ export function LabRetreatGallery() {
   const retreatData = data?.retreatData || [];
   const [active, setActive] = useState(0);
 
+  // 所有 hooks 必须在条件判断之前调用
+  const total = retreatData.length;
+  const current = retreatData[active] || {};
+
+  const goPrev = () => setActive((i) => (i - 1 + total) % total);
+  const goNext = () => setActive((i) => (i + 1) % total);
+
+  useEffect(() => {
+    if (total === 0) return;
+    const onKeyDown = (e) => {
+      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [total]);
+
   if (loading) {
     return (
       <Section id="retreat" className="bg-sci-dark relative">
@@ -17,21 +34,6 @@ export function LabRetreatGallery() {
       </Section>
     );
   }
-
-  const total = retreatData.length;
-  const current = retreatData[active] || {};
-
-  const goPrev = () => setActive((i) => (i - 1 + total) % total);
-  const goNext = () => setActive((i) => (i + 1) % total);
-
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "ArrowRight") goNext();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [total]);
 
   // 如果没有数据，显示空状态
   if (total === 0) {
