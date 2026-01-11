@@ -6,4 +6,3 @@ export { Alumni } from './Alumni';
 export { Publications } from './Publications';
 export { LabRetreatGallery } from './LabRetreatGallery';
 export { Contact } from './Contact';
-export { IntroScreen } from './IntroScreen';
