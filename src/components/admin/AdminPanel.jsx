@@ -74,9 +74,9 @@ export function AdminPanel() {
         await updateData('labInfo', formData);
         alert('保存成功！');
       } else if (editingItem._isNew) {
-        // 新增项目
+        // 新增项目 - 不要在这里设置 id，让 Firestore 自动生成
         const { _collectionKey, _isNew, id, ...newItem } = formData;
-        await addItem(_collectionKey, { ...newItem, id: Date.now() });
+        await addItem(_collectionKey, newItem);
         alert('添加成功！');
       } else {
         // 更新项目
@@ -106,19 +106,18 @@ export function AdminPanel() {
 
   const handleAddNew = () => {
     const collectionKey = activeTab;
-    // 使用时间戳 + 随机数生成唯一 ID
-    const newId = Date.now() + Math.floor(Math.random() * 1000);
-    let newItem = { id: newId };
+    // 不设置 id，让 Firestore 自动生成文档 ID
+    let newItem = {};
 
     // 根据类型设置默认字段
     if (collectionKey === 'membersData') {
-      newItem = { ...newItem, name: '', role: '', avatar: '', bio: '', tags: [] };
+      newItem = { name: '', role: '', avatar: '', bio: '', tags: [] };
     } else if (collectionKey === 'alumniData') {
-      newItem = { ...newItem, name: '', role: '', startYear: new Date().getFullYear(), endYear: new Date().getFullYear() + 1, destination: '', note: '' };
+      newItem = { name: '', role: '', startYear: new Date().getFullYear(), endYear: new Date().getFullYear() + 1, destination: '', note: '' };
     } else if (collectionKey === 'publicationsData') {
-      newItem = { ...newItem, title: '', authors: '', conference: '', year: new Date().getFullYear().toString(), link: '', abstract: '' };
+      newItem = { title: '', authors: '', conference: '', year: new Date().getFullYear().toString(), link: '', abstract: '' };
     } else if (collectionKey === 'retreatData') {
-      newItem = { ...newItem, src: '', alt: '', title: '', desc: '' };
+      newItem = { src: '', alt: '', title: '', desc: '' };
     }
 
     setEditingItem({ ...newItem, _collectionKey: collectionKey, _isNew: true });
@@ -391,11 +390,11 @@ function CollectionEditor({ collectionKey, data, editing, formData, setFormData,
       {isEditing ? (
         <div className="bg-sci-darker rounded-xl p-6 mb-6">
           <h3 className="text-lg font-semibold text-white mb-4">
-            {editing.id ? '编辑项目' : '新增项目'}
+            {editing._isNew ? '新增项目' : '编辑项目'}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.entries(formData).map(([key, value]) => {
-              if (key === 'id' || key === '_collectionKey' || key === '_isNew') return null;
+              if (key === '_collectionKey' || key === '_isNew') return null;
               return (
                 <div key={key}>
                   <label className="text-xs text-slate-500 uppercase mb-1 block">{key}</label>
