@@ -39,53 +39,50 @@ function IntroScreen({ onComplete, isDataReady }) {
   const [loopCount, setLoopCount] = useState(0);
   const [stage, setStage] = useState('initial');
 
-  // 当数据准备好时，完成动画
+  // 当数据准备好时，直接完成动画
   useEffect(() => {
     if (isDataReady && stage !== 'done') {
-      // 如果正在播放，等当前循环完成后再结束
-      if (stage === 'fadeOut' || stage === 'line2') {
-        setStage('fadeOut');
-        const t = setTimeout(() => {
-          setStage('done');
-          onComplete();
-        }, 600);
-        return () => clearTimeout(t);
-      } else {
-        // 强制进入完成流程
-        setStage('fadeOut');
-        const t = setTimeout(() => {
-          setStage('done');
-          onComplete();
-        }, 600);
-        return () => clearTimeout(t);
-      }
+      // 如果已经在 fadeOut 阶段，等待完成
+      if (stage === 'fadeOut') return;
+
+      // 强制进入完成流程
+      setStage('fadeOut');
+      const t = setTimeout(() => {
+        setStage('done');
+        onComplete();
+      }, 600);
+      return () => clearTimeout(t);
     }
   }, [isDataReady, stage, onComplete]);
 
   useEffect(() => {
     if (stage === 'done') return;
 
-    const t1 = setTimeout(() => setStage('bgIn'), 50);
-    const t2 = setTimeout(() => setStage('line1'), 600);
-    const t3 = setTimeout(() => setStage('line2'), 3000);
-    const t4 = setTimeout(() => setStage('fadeOut'), 5200);
-    const t5 = setTimeout(() => {
-      if (isDataReady) {
-        setStage('done');
-        onComplete();
-      } else {
-        // 循环播放
-        setLoopCount(c => c + 1);
-        setStage('initial');
-      }
-    }, 5800);
+    // 定义各阶段的时间
+    const timeouts = [
+      { fn: () => setStage('bgIn'), delay: 50 },
+      { fn: () => setStage('line1'), delay: 600 },
+      { fn: () => setStage('line2'), delay: 3000 },
+      { fn: () => setStage('fadeOut'), delay: 5200 },
+      { fn: () => {
+        if (isDataReady) {
+          setStage('done');
+          onComplete();
+        } else {
+          setLoopCount(c => c + 1);
+          setStage('initial');
+        }
+      }, delay: 5800 },
+    ];
 
+    // 设置所有定时器
+    const timerIds = timeouts.map((t) =>
+      setTimeout(t.fn, t.delay)
+    );
+
+    // 清理函数
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-      clearTimeout(t5);
+      timerIds.forEach(id => clearTimeout(id));
     };
   }, [stage, isDataReady, onComplete]);
 
