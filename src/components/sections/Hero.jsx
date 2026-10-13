@@ -2,12 +2,31 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import { useLang } from '../../i18n/LanguageContext';
 import { gsap, MEDIA, EASE } from '../../lib/motion';
-import { HeroCanvas } from '../hero/HeroCanvas';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useNeurulationScroll } from '../neurulation/useNeurulationScroll';
+import { FigureLabels, StageCaption, StageTicks, StaticNeurulation } from '../neurulation/NeurulationFigure';
 import { Button } from '../ui';
+
+const LAST_STAGE = 3;
 
 export function Hero({ play = true }) {
   const { t } = useLang();
   const ref = useRef(null);
+  const figureRef = useRef(null);
+  const canvasRef = useRef(null);
+  const reduced = useMediaQuery(MEDIA.reduced);
+  const desktop = useMediaQuery('(min-width: 1024px)');
+
+  // 桌面端固定整个 Hero；移动端 Hero 高于视口，只固定图（导航栏下方）
+  const scrolled = useNeurulationScroll({
+    enabled: !reduced,
+    canvasRef,
+    pinRef: desktop ? ref : figureRef,
+    start: desktop ? 'top top' : 'top top+=72',
+    end: desktop ? '+=300%' : '+=150%',
+  });
+  const active = reduced ? LAST_STAGE : scrolled;
+  const { stages, labels } = t.neurulation;
 
   // 首屏入场：开屏结束（play）后，标题按行遮罩上移，其余元素依次淡入
   useGSAP(
@@ -26,16 +45,23 @@ export function Hero({ play = true }) {
   );
 
   return (
-    <section id="home" ref={ref} className="relative overflow-hidden pt-20 lg:min-h-[100svh]">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:px-6 lg:min-h-[calc(100svh-5rem)] lg:grid-cols-12 lg:items-center lg:px-10">
-        <figure className="relative order-first aspect-[5/4] w-full lg:order-last lg:col-span-7 lg:aspect-auto lg:h-[78svh]">
-          <HeroCanvas play={play} className="absolute inset-0" />
-          <figcaption data-hero-fade className="absolute -bottom-12 left-0 right-0 font-mono text-[11px] leading-relaxed text-muted lg:bottom-0 lg:left-[8%]">
-            {t.hero.caption}
+    <section id="home" ref={ref} className="relative overflow-hidden bg-paper pt-20 lg:h-[100svh]">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:px-6 lg:h-[calc(100svh-5rem)] lg:grid-cols-12 lg:items-center lg:px-10">
+        <figure ref={figureRef} className="relative order-first w-full bg-paper lg:order-last lg:col-span-7">
+          <div className="relative mx-auto aspect-[10/7] w-full lg:max-w-[calc(64svh*10/7)]">
+            {reduced ? <StaticNeurulation stage={LAST_STAGE} /> : <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" aria-hidden="true" />}
+            <FigureLabels labels={labels} active={active} />
+          </div>
+          <figcaption data-hero-fade className="mt-4 space-y-3">
+            <StageCaption stages={stages} active={active} />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="font-mono text-[11px] leading-relaxed text-muted">{t.hero.caption}</span>
+              <StageTicks stages={stages} active={active} />
+            </div>
           </figcaption>
         </figure>
 
-        <div className="pb-16 pt-12 lg:col-span-5 lg:pb-0 lg:pt-0">
+        <div className="pb-16 pt-4 lg:col-span-5 lg:pb-0 lg:pt-0">
           <p data-hero-fade className="font-mono text-xs uppercase tracking-[0.18em] text-accent">
             {t.hero.eyebrow}
           </p>

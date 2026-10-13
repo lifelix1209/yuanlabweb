@@ -114,6 +114,27 @@ export function ectodermHalf(s, side) {
   };
 }
 
+function sampleQuad({ from, ctrl, to }, segments) {
+  return Array.from({ length: segments + 1 }, (_, i) => {
+    const t = i / segments;
+    const u = 1 - t;
+    return [
+      u * u * from[0] + 2 * u * t * ctrl[0] + t * t * to[0],
+      u * u * from[1] + 2 * u * t * ctrl[1] + t * t * to[1],
+    ];
+  });
+}
+
+// 胚胎表面（左外胚层 → 神经板中线 → 右外胚层），供开屏描边与 Hero 对齐
+export function surfaceLine(s = 0, segments = 24) {
+  const half = PLATE.length / 2;
+  return [
+    ...sampleQuad(ectodermHalf(s, -1), segments).reverse(),
+    ...edge(s, -half, half, 0, segments * 2).slice(1, -1),
+    ...sampleQuad(ectodermHalf(s, 1), segments),
+  ];
+}
+
 // 嵴细胞：板边界 → 背侧成团（脱层）→ 沿神经管两侧迁移
 export function createCrestCells(seed = 11, perSide = 8) {
   const rng = createRng(seed);
