@@ -5,7 +5,7 @@ import { LanguageProvider } from './i18n/LanguageContext';
 import { SmoothScroll } from './components/motion/SmoothScroll';
 import { Splash } from './components/intro/Splash';
 import { safeStorage } from './lib/storage';
-import { Navbar, Hero, Research, Members, Alumni, Publications, LabRetreatGallery, Contact } from './components/sections';
+import { Navbar, Hero, NeuralCrestSequence, Research, Members, Alumni, Publications, LabRetreatGallery, Contact } from './components/sections';
 import { AdminPanel } from './components/admin';
 import { Login } from './components/admin/Login';
 
@@ -56,6 +56,7 @@ function HomePage() {
       <Navbar />
       <main>
         <Hero play={released} />
+        <NeuralCrestSequence />
         <Research />
         <Members />
         <Publications />

@@ -10,7 +10,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.js"],
     coverage: {
-      include: ["src/i18n/**", "src/lib/**", "src/components/hero/neuralCrestGeometry.js", "src/components/intro/**"],
+      include: ["src/i18n/**", "src/lib/**", "src/components/hero/neuralCrestGeometry.js", "src/components/neurulation/neurulationGeometry.js", "src/components/neurulation/irreversibleProgress.js", "src/components/intro/**"],
     },
   },
 });
