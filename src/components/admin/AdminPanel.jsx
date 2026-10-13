@@ -15,6 +15,28 @@ const tabs = [
   { key: 'retreatData', label: '团建相册', icon: Images },
 ];
 
+const TEXTAREA_FIELDS = new Set(['bio', 'bioEn', 'abstract', 'note', 'noteEn', 'desc', 'descEn']);
+const TAG_FIELDS = new Set(['tags', 'tagsEn']);
+
+// 各类型条目的默认字段（*En 为英文版本，前台在 EN 模式下优先显示）
+function defaultItemFor(collectionKey) {
+  const year = new Date().getFullYear();
+  switch (collectionKey) {
+    case 'membersData':
+      return { name: '', nameEn: '', role: '', roleEn: '', avatar: '', bio: '', bioEn: '', tags: [], tagsEn: [] };
+    case 'alumniData':
+      return { name: '', nameEn: '', role: '', roleEn: '', startYear: year, endYear: year + 1, destination: '', destinationEn: '', note: '', noteEn: '' };
+    case 'publicationsData':
+      return { title: '', authors: '', conference: '', year: String(year), link: '', abstract: '' };
+    case 'retreatData':
+      return { src: '', alt: '', title: '', desc: '', descEn: '' };
+    case 'labInfo':
+      return { focusTagEn: '', addressEn: '' };
+    default:
+      return {};
+  }
+}
+
 export function AdminPanel() {
   const { data, loading, error, updateData, updateItem, addItem, deleteItem, resetData, exportData, importData } = useLabData();
   const [activeTab, setActiveTab] = useState('labInfo');
@@ -63,9 +85,10 @@ export function AdminPanel() {
     navigate('/login');
   };
 
+  // 合并该类型的默认字段，使旧数据编辑时也显示新增的英文字段
   const handleEdit = (item, collectionKey) => {
     setEditingItem({ ...item, _collectionKey: collectionKey });
-    setFormData(item);
+    setFormData({ ...defaultItemFor(collectionKey), ...item });
   };
 
   const handleSave = async () => {
@@ -75,11 +98,13 @@ export function AdminPanel() {
         alert('保存成功！');
       } else if (editingItem._isNew) {
         // 新增项目 - 不要在这里设置 id，让 Firestore 自动生成
+        // eslint-disable-next-line no-unused-vars
         const { _collectionKey, _isNew, id, ...newItem } = formData;
         await addItem(_collectionKey, newItem);
         alert('添加成功！');
       } else {
         // 更新项目
+        // eslint-disable-next-line no-unused-vars
         const { _collectionKey, _isNew, id, ...updateItemData } = formData;
         await updateItem(editingItem._collectionKey, editingItem.id, updateItemData);
         alert('保存成功！');
@@ -107,18 +132,7 @@ export function AdminPanel() {
   const handleAddNew = () => {
     const collectionKey = activeTab;
     // 不设置 id，让 Firestore 自动生成文档 ID
-    let newItem = {};
-
-    // 根据类型设置默认字段
-    if (collectionKey === 'membersData') {
-      newItem = { name: '', role: '', avatar: '', bio: '', tags: [] };
-    } else if (collectionKey === 'alumniData') {
-      newItem = { name: '', role: '', startYear: new Date().getFullYear(), endYear: new Date().getFullYear() + 1, destination: '', note: '' };
-    } else if (collectionKey === 'publicationsData') {
-      newItem = { title: '', authors: '', conference: '', year: new Date().getFullYear().toString(), link: '', abstract: '' };
-    } else if (collectionKey === 'retreatData') {
-      newItem = { src: '', alt: '', title: '', desc: '' };
-    }
+    const newItem = defaultItemFor(collectionKey);
 
     setEditingItem({ ...newItem, _collectionKey: collectionKey, _isNew: true });
     setFormData({ ...newItem, _collectionKey: collectionKey, _isNew: true });
@@ -359,8 +373,8 @@ function CollectionEditor({ collectionKey, data, editing, formData, setFormData,
   const isEditing = editing && editing._collectionKey === collectionKey;
   const title = tabs.find(t => t.key === collectionKey)?.label || collectionKey;
 
-  const handleTagsChange = (value) => {
-    setFormData({ ...formData, tags: value.split(',').map(t => t.trim()).filter(Boolean) });
+  const handleTagsChange = (key, value) => {
+    setFormData({ ...formData, [key]: value.split(',').map(t => t.trim()).filter(Boolean) });
   };
 
   const handleFileUpload = (key, e) => {
@@ -398,17 +412,17 @@ function CollectionEditor({ collectionKey, data, editing, formData, setFormData,
               return (
                 <div key={key}>
                   <label className="text-xs text-slate-500 uppercase mb-1 block">{key}</label>
-                  {key === 'bio' || key === 'abstract' || key === 'note' || key === 'desc' ? (
+                  {TEXTAREA_FIELDS.has(key) ? (
                     <textarea
                       value={value || ''}
                       onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
                       className="w-full bg-sci-card text-white rounded-xl p-3 min-h-[80px]"
                     />
-                  ) : key === 'tags' ? (
+                  ) : TAG_FIELDS.has(key) ? (
                     <input
                       type="text"
                       value={Array.isArray(value) ? value.join(', ') : value || ''}
-                      onChange={(e) => handleTagsChange(e.target.value)}
+                      onChange={(e) => handleTagsChange(key, e.target.value)}
                       placeholder="用逗号分隔"
                       className="w-full bg-sci-card text-white rounded-xl p-3"
                     />

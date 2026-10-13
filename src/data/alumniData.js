@@ -1,30 +1,42 @@
-// Alumni 数据（身份/起止年份/去向）
+// Alumni 数据（身份/起止年份/去向；*En 为可选英文字段）
 export const alumniData = [
   {
     id: 1,
     name: "潘小虹",
+    nameEn: "Xiaohong Pan",
     role: "硕士研究生",
+    roleEn: "Master's Student",
     startYear: 2022,
     endYear: 2025,
     destination: "浙江大学 科研助理",
+    destinationEn: "Research Assistant, Zhejiang University",
     note: "研究方向：暂无",
+    noteEn: "",
   },
   {
     id: 2,
     name: "牛信熠",
+    nameEn: "Xinyi Niu",
     role: "硕士研究生",
+    roleEn: "Master's Student",
     startYear: 2020,
     endYear: 2021,
     destination: "暂无",
+    destinationEn: "—",
     note: "暂无",
+    noteEn: "",
   },
   {
     id: 3,
     name: "华潇枫",
+    nameEn: "Xiaofeng Hua",
     role: "本科科研实习",
+    roleEn: "Undergraduate Researcher",
     startYear: 2022,
     endYear: 2025,
     destination: "北京大学 博士研究生",
+    destinationEn: "PhD Student, Peking University",
     note: "参与颅颌面发育谱系追踪工作",
+    noteEn: "Lineage tracing in craniofacial development",
   },
 ];
