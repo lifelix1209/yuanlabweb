@@ -1,7 +1,7 @@
 import { clamp } from '../hero/neuralCrestGeometry';
 import {
   NOTOCHORD, plateOutline, borderOutline, borderOpacity, ectodermHalf,
-  createCrestCells, crestCellAt, fitDesign,
+  createCrestCells, crestCellAt, fitDesign, surfaceLine,
 } from './neurulationGeometry';
 
 const COLORS = {
@@ -214,6 +214,12 @@ export function createRenderer(canvas, { stage = 0, animate = true, seed = 11 } 
     stop() {
       state.running = false;
       cancelAnimationFrame(state.raf);
+    },
+    // 胚胎表面在视口中的坐标，供开屏动画描边后无缝落在神经板上
+    getArcClientPoints() {
+      const rect = canvas.getBoundingClientRect();
+      const { scale, offsetX, offsetY } = state.transform;
+      return surfaceLine(state.stage).map(([x, y]) => [rect.left + offsetX + x * scale, rect.top + offsetY + y * scale]);
     },
     resize,
     destroy() {

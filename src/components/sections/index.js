@@ -1,6 +1,5 @@
 export { Navbar } from './Navbar';
 export { Hero } from './Hero';
-export { NeuralCrestSequence } from './NeuralCrestSequence';
 export { Research } from './Research';
 export { Members } from './Members';
 export { Alumni } from './Alumni';

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   PLATE, TUBE, APEX, STAGE_LABELS, stageAt, curvatureAt, plateOutline, borderOutline,
-  borderOpacity, ectodermHalf, createCrestCells, crestCellAt, fitDesign,
+  borderOpacity, ectodermHalf, createCrestCells, crestCellAt, fitDesign, surfaceLine,
 } from './neurulationGeometry';
 
 const near = (a, b, eps = 1e-6) => Math.hypot(a[0] - b[0], a[1] - b[1]) < eps;
@@ -108,6 +108,18 @@ describe('crest cells', () => {
 
   it('are deterministic for a seed', () => {
     expect(createCrestCells(5)).toEqual(cells);
+  });
+});
+
+describe('surfaceLine', () => {
+  it('runs continuously from the left ectoderm across the plate to the right ectoderm', () => {
+    const line = surfaceLine(0, 20);
+    expect(line[0][0]).toBeLessThan(100);
+    expect(line[line.length - 1][0]).toBeGreaterThan(900);
+    line.slice(1).forEach((p, i) => {
+      expect(p[0]).toBeGreaterThan(line[i][0]);
+      expect(Math.hypot(p[0] - line[i][0], p[1] - line[i][1])).toBeLessThan(40);
+    });
   });
 });
 

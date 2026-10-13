@@ -22,12 +22,9 @@ export const strings = {
       lead: '我们结合细胞生物学、空间组学与生物信息学，解析颅颌面发育中的细胞命运与组织图谱，揭示颅缝稳态失衡与颅缝早闭的致病机制，并探索骨与组织再生的新策略。',
       ctaResearch: '研究方向',
       ctaPeople: '认识团队',
-      caption: 'Fig. 0 — 颅神经嵴细胞自背侧神经管迁移至额鼻突与咽弓（示意模拟）',
+      caption: 'Fig. 0 — 神经胚形成中颅神经嵴的产生、脱层与迁移（横截面示意，向下滚动推进）',
     },
     neurulation: {
-      label: 'Origin',
-      title: '神经嵴从哪里来',
-      caption: 'Fig. 0′ — 神经胚形成中神经嵴的产生、脱层与迁移（横截面示意）',
       stages: [
         { letter: 'B', title: '神经板', desc: '神经板与非神经外胚层交界处的神经板边界，是神经嵴的发源地；脊索位于其下方。' },
         { letter: 'C', title: '神经褶', desc: '神经板向上折起形成神经褶，边界处的迁移前神经嵴随褶顶抬升。' },
@@ -131,12 +128,9 @@ export const strings = {
       lead: 'We combine cell biology, spatial omics and bioinformatics to map cell fate and tissue architecture in craniofacial development, uncover how suture homeostasis fails in craniosynostosis, and develop new strategies for bone and tissue regeneration.',
       ctaResearch: 'Research',
       ctaPeople: 'Meet the team',
-      caption: 'Fig. 0 — Cranial neural crest cells migrating from the dorsal neural tube to the frontonasal process and pharyngeal arches (simulation).',
+      caption: 'Fig. 0 — Induction, delamination and migration of the cranial neural crest during neurulation (cross-section; scroll to advance).',
     },
     neurulation: {
-      label: 'Origin',
-      title: 'Where the neural crest comes from',
-      caption: 'Fig. 0′ — Induction, delamination and migration of the neural crest during neurulation (cross-section, schematic).',
       stages: [
         { letter: 'B', title: 'Neural plate', desc: 'The neural plate border, between the neural plate and non-neural ectoderm, is where the neural crest arises. The notochord lies beneath.' },
         { letter: 'C', title: 'Neural folds', desc: 'The plate folds upward; premigratory neural crest is lifted at the crests of the neural folds.' },
