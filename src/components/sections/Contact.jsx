@@ -1,83 +1,68 @@
-import { Mail, MapPin, Github, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight } from 'lucide-react';
 import { useLabData } from '../../hooks/useLabData';
+import { useLang } from '../../i18n/LanguageContext';
+import { SplitHeading } from '../motion/SplitHeading';
+import { Reveal } from '../motion/Reveal';
+
+function ExternalLink({ href, children }) {
+  if (!href || href === '#') return null;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="group inline-flex items-center gap-1 text-paper/80 transition-colors hover:text-paper">
+      {children}
+      <ArrowUpRight size={14} strokeWidth={1.5} className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+    </a>
+  );
+}
 
 export function Contact() {
-  const { data, loading } = useLabData();
-  const labInfo = data?.labInfo || {};
-
-  if (loading) {
-    return (
-      <section id="contact" className="py-24 bg-sci-darker text-white relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <div className="text-slate-400">加载中...</div>
-        </div>
-      </section>
-    );
-  }
+  const { data } = useLabData();
+  const { t, pick } = useLang();
+  const labInfo = data?.labInfo ?? {};
+  const year = new Date().getFullYear();
 
   return (
-    <section
-      id="contact"
-      className="py-24 bg-sci-darker text-white relative overflow-hidden"
-    >
-      {/* 底部装饰纹理 */}
-      <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#06b6d4_1px,transparent_1px)] [background-size:30px_30px]"></div>
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sci-primary/50 to-transparent"></div>
-
-      <div className="max-w-5xl mx-auto px-6 relative z-10 text-center">
-        <h2 className="text-3xl font-bold mb-6">保持联系</h2>
-        <p className="text-slate-400 mb-12 max-w-xl mx-auto">
-          如果您对我们的研究方向感兴趣，或希望申请博士/硕士/本科科研实习，欢迎联系 😊
+    <footer id="contact" className="bg-accent-deep text-paper">
+      <div className="mx-auto max-w-7xl px-4 pb-10 pt-24 sm:px-6 md:pt-32 lg:px-10">
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-paper/60">
+          <span className="text-paper">06</span>
+          <span className="mx-2">—</span>
+          {t.contact.label}
         </p>
+        <SplitHeading className="mt-8 font-serif text-5xl font-medium leading-[1.05] tracking-tight md:text-7xl">
+          {t.contact.title}
+        </SplitHeading>
+        <Reveal as="p" className="mt-6 max-w-xl leading-relaxed text-paper/70">{t.contact.lead}</Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-          {/* 邮箱卡片 */}
-          <div className="group bg-sci-card/50 backdrop-blur-sm p-8 rounded-2xl border border-sci-border hover:border-sci-primary/50 transition-all duration-300 hover:-translate-y-1">
-            <div className="w-12 h-12 bg-sci-gradient rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-sci transition-all duration-300">
-              <Mail size={24} />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">电子邮箱</h3>
-            <a
-              href={`mailto:${labInfo.contactEmail}`}
-              className="text-slate-300 font-mono select-all cursor-pointer hover:text-sci-primary transition-colors"
-            >
-              {labInfo.contactEmail}
-            </a>
-          </div>
-
-          {/* 地址卡片 */}
-          <div className="group bg-sci-card/50 backdrop-blur-sm p-8 rounded-2xl border border-sci-border hover:border-sci-primary/50 transition-all duration-300 hover:-translate-y-1">
-            <div className="w-12 h-12 bg-sci-gradient rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:shadow-sci transition-all duration-300">
-              <MapPin size={24} />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">实验室地址</h3>
-            <p className="text-slate-300">{labInfo.address}</p>
-          </div>
-        </div>
-
-        <div className="flex justify-center gap-8 border-t border-sci-border pt-10">
+        {labInfo.contactEmail && (
           <a
-            href={labInfo.githubUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-slate-500 hover:text-sci-primary transition-colors flex items-center gap-2"
+            href={`mailto:${labInfo.contactEmail}`}
+            className="mt-12 inline-block break-all border-b border-paper/30 pb-2 font-serif text-3xl transition-colors hover:border-paper md:text-5xl"
           >
-            <Github size={20} /> GitHub
+            {labInfo.contactEmail}
           </a>
-          <a
-            href={labInfo.universityUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-slate-500 hover:text-sci-primary transition-colors flex items-center gap-2"
-          >
-            <ExternalLink size={20} /> University / Institute
-          </a>
-        </div>
+        )}
 
-        <div className="mt-10 text-slate-400 text-sm">
-          &copy; 2025 {labInfo.brand}. All Rights Reserved.
+        <dl className="mt-20 grid grid-cols-1 gap-10 border-t border-paper/20 pt-10 text-sm md:grid-cols-12">
+          <div className="md:col-span-6">
+            <dt className="font-mono text-[11px] uppercase tracking-wider text-paper/50">{t.contact.address}</dt>
+            <dd className="mt-3 max-w-sm leading-relaxed text-paper/80">{pick(labInfo, 'address')}</dd>
+          </div>
+          <div className="md:col-span-6">
+            <dt className="font-mono text-[11px] uppercase tracking-wider text-paper/50">{t.contact.links}</dt>
+            <dd className="mt-3 flex flex-col gap-2">
+              <ExternalLink href={labInfo.universityUrl}>{t.contact.university}</ExternalLink>
+              <ExternalLink href={labInfo.scholarUrl}>Google Scholar</ExternalLink>
+              <ExternalLink href={labInfo.githubUrl}>GitHub</ExternalLink>
+            </dd>
+          </div>
+        </dl>
+
+        <div className="mt-20 flex flex-wrap items-center justify-between gap-4 font-mono text-[11px] text-paper/50">
+          <span>© {year} {labInfo.brand ?? 'Yuan Lab'}. {t.contact.rights}</span>
+          <Link to="/login" viewTransition className="transition-colors hover:text-paper">Admin</Link>
         </div>
       </div>
-    </section>
+    </footer>
   );
 }

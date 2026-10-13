@@ -1,87 +1,100 @@
-import { FileText } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { useGSAP } from '@gsap/react';
+import { ArrowUpRight } from 'lucide-react';
 import { useLabData } from '../../hooks/useLabData';
-import { Section } from '../ui';
+import { useLang } from '../../i18n/LanguageContext';
+import { gsap, MEDIA, EASE } from '../../lib/motion';
+import { Section, SectionHeader } from '../ui';
+
+const PI_AUTHOR = /(Yuan Yuan#?|Y\.? Yuan)/;
+
+// 作者列表中高亮课题组负责人
+function Authors({ text = '' }) {
+  return text.split(PI_AUTHOR).map((part, i) =>
+    PI_AUTHOR.test(part) ? <strong key={i} className="font-medium text-ink">{part}</strong> : part
+  );
+}
+
+function groupByYear(pubs) {
+  const groups = pubs.reduce((acc, pub) => {
+    const year = String(pub.year ?? '—');
+    return { ...acc, [year]: [...(acc[year] ?? []), pub] };
+  }, {});
+  return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+}
+
+function Entry({ pub, t }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li data-entry className="border-b border-rule py-8 first:pt-0">
+      <p className="font-serif text-base italic text-accent">{pub.conference}</p>
+      <h4 className="mt-2 font-serif text-xl leading-snug text-ink md:text-2xl">
+        <a href={pub.link} target="_blank" rel="noreferrer" className="group inline decoration-rule underline-offset-4 hover:underline">
+          {pub.title}
+          <ArrowUpRight size={18} strokeWidth={1.5} className="ml-1 inline-block align-baseline text-muted transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+        </a>
+      </h4>
+      <p className="mt-3 text-sm leading-relaxed text-muted"><Authors text={pub.authors} /></p>
+      {pub.abstract && (
+        <>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            className="mt-4 font-mono text-[11px] uppercase tracking-wider text-muted transition-colors hover:text-accent"
+          >
+            {open ? `− ${t.publications.hideAbstract}` : `+ ${t.publications.abstract}`}
+          </button>
+          {open && <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">{pub.abstract}</p>}
+        </>
+      )}
+    </li>
+  );
+}
+
+// 每个年份组：分隔线自左向右画出，条目依次出现
+function YearGroup({ year, pubs, t }) {
+  const ref = useRef(null);
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(MEDIA.motion, () => {
+        const tl = gsap.timeline({ scrollTrigger: { trigger: ref.current, start: 'top 85%', once: true } });
+        tl.from('[data-rule]', { scaleX: 0, transformOrigin: 'left center', duration: 1.2, ease: EASE })
+          .from('[data-year]', { autoAlpha: 0, y: 20, duration: 1, ease: EASE }, 0.1)
+          .from('[data-entry]', { autoAlpha: 0, y: 24, duration: 1, ease: EASE, stagger: 0.1 }, 0.2);
+      });
+      return () => mm.revert();
+    },
+    { scope: ref }
+  );
+  return (
+    <div ref={ref} className="grid grid-cols-1 gap-6 pb-12 md:grid-cols-12">
+      <div data-rule className="h-px bg-ink md:col-span-12" />
+      <p data-year className="font-serif text-5xl font-medium tabular-nums text-ink md:col-span-3 md:pt-6">{year}</p>
+      <ol className="md:col-span-9 md:pt-8">
+        {pubs.map((pub) => <Entry key={pub.id} pub={pub} t={t} />)}
+      </ol>
+    </div>
+  );
+}
 
 export function Publications() {
-  const { data, loading } = useLabData();
-  const publicationsData = data?.publicationsData || [];
-  const labInfo = data?.labInfo || {};
-
-  if (loading) {
-    return (
-      <Section id="publications" className="bg-sci-dark">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center text-slate-400 py-12">加载中...</div>
-        </div>
-      </Section>
-    );
-  }
+  const { data } = useLabData();
+  const { t } = useLang();
+  const groups = useMemo(() => groupByYear(data?.publicationsData ?? []), [data?.publicationsData]);
+  const scholarUrl = data?.labInfo?.scholarUrl;
 
   return (
-    <Section id="publications" className="bg-sci-dark">
-      <div className="max-w-4xl mx-auto px-6">
-        <div className="mb-12 flex justify-between items-end gap-6">
-          <div>
-            <h2 className="text-3xl font-bold text-white">近期出版物</h2>
-            <div className="w-12 h-1 bg-sci-gradient mt-4 rounded-full"></div>
-            <p className="text-slate-400 mt-4 max-w-2xl leading-relaxed">
-              以发育机制为基础，结合组学与模型系统，探索颅颌面相关疾病机制与再生策略。
-            </p>
-          </div>
-
-          <a
-            href={labInfo.scholarUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sci-primary font-medium hover:text-sci-primaryHover text-sm hidden sm:block transition-colors"
-          >
-            查看 Google Scholar →
-          </a>
-        </div>
-
-        <div className="space-y-6">
-          {publicationsData.map((pub) => (
-            <div
-              key={pub.id}
-              className="group bg-sci-card p-8 rounded-2xl border border-sci-border hover:border-sci-primary/50 hover:shadow-sci transition-all duration-300 relative overflow-hidden"
-            >
-              {/* 发光效果 */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-sci-gradient/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-sci-gradient/10 transition-all"></div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-between items-start relative z-10">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-sci-gradient/20 text-sci-primary border border-sci-primary/30">
-                      {pub.conference}
-                    </span>
-                    <span className="text-slate-500 text-sm font-mono">{pub.year}</span>
-                  </div>
-                  <a
-                    href={pub.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block text-xl font-bold text-white group-hover:text-sci-primary transition-colors"
-                  >
-                    {pub.title}
-                  </a>
-                  <p className="text-slate-300 font-medium text-sm">{pub.authors}</p>
-                  <p className="text-slate-500 text-sm leading-relaxed">{pub.abstract}</p>
-                </div>
-
-                <a
-                  href={pub.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0 flex items-center gap-1 text-slate-500 hover:text-sci-primary transition-colors text-sm font-bold mt-2 sm:mt-0"
-                  aria-label="Open publication"
-                >
-                  <FileText size={16} /> Link
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <Section id="publications">
+      <SectionHeader index="03" label={t.publications.label} title={t.publications.title} description={t.publications.lead} />
+      {groups.map(([year, pubs]) => <YearGroup key={year} year={year} pubs={pubs} t={t} />)}
+      {scholarUrl && (
+        <a href={scholarUrl} target="_blank" rel="noreferrer" className="group inline-flex items-center gap-2 border-b border-ink pb-1 text-ink transition-colors hover:border-accent hover:text-accent">
+          {t.publications.scholar}
+          <ArrowUpRight size={16} strokeWidth={1.5} className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+        </a>
+      )}
     </Section>
   );
 }

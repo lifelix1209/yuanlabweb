@@ -1,59 +1,59 @@
-import { ArrowRight, Users, ChevronDown, Sparkles } from 'lucide-react';
-import { useLabData } from '../../hooks/useLabData';
+import { useRef } from 'react';
+import { useGSAP } from '@gsap/react';
+import { useLang } from '../../i18n/LanguageContext';
+import { gsap, MEDIA, EASE } from '../../lib/motion';
+import { HeroCanvas } from '../hero/HeroCanvas';
 import { Button } from '../ui';
 
-export function Hero() {
-  const { data, loading } = useLabData();
-  const labInfo = data?.labInfo || {};
+export function Hero({ play = true }) {
+  const { t } = useLang();
+  const ref = useRef(null);
 
-  if (loading) {
-    return (
-      <section id="home" className="min-h-screen flex flex-col justify-center items-center relative pt-24 overflow-hidden grid-bg">
-        <div className="text-center text-slate-400">加载中...</div>
-      </section>
-    );
-  }
+  // 首屏入场：开屏结束（play）后，标题按行遮罩上移，其余元素依次淡入
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(MEDIA.motion, () => {
+        const tl = gsap.timeline({ paused: true });
+        tl.from('[data-hero-line]', { yPercent: 110, duration: 1.2, ease: EASE, stagger: 0.08 })
+          .from('[data-hero-fade]', { y: 16, autoAlpha: 0, duration: 1, ease: EASE, stagger: 0.08 }, '-=0.9');
+        if (play) tl.play();
+        return () => tl.kill();
+      });
+      return () => mm.revert();
+    },
+    { scope: ref, dependencies: [play], revertOnUpdate: true }
+  );
 
   return (
-    <section
-      id="home"
-      className="min-h-screen flex flex-col justify-center items-center relative pt-24 overflow-hidden grid-bg"
-    >
-      {/* 背景装饰 */}
-      <div className="absolute top-1/4 -right-20 w-[500px] h-[500px] bg-sci-primary/10 rounded-full blur-[100px] -z-10 animate-pulse"></div>
-      <div className="absolute bottom-0 -left-20 w-[400px] h-[400px] bg-sci-secondary/10 rounded-full blur-[80px] -z-10"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-sci-glow rounded-full blur-[120px] -z-10"></div>
+    <section id="home" ref={ref} className="relative overflow-hidden pt-20 lg:min-h-[100svh]">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 sm:px-6 lg:min-h-[calc(100svh-5rem)] lg:grid-cols-12 lg:items-center lg:px-10">
+        <figure className="relative order-first aspect-[5/4] w-full lg:order-last lg:col-span-7 lg:aspect-auto lg:h-[78svh]">
+          <HeroCanvas play={play} className="absolute inset-0" />
+          <figcaption data-hero-fade className="absolute -bottom-12 left-0 right-0 font-mono text-[11px] leading-relaxed text-muted lg:bottom-0 lg:left-[8%]">
+            {t.hero.caption}
+          </figcaption>
+        </figure>
 
-      <div className="text-center max-w-4xl px-6 space-y-8 relative z-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sci-card/50 border border-sci-primary/30 text-sci-primary text-xs font-bold tracking-wider uppercase backdrop-blur-sm">
-          <Sparkles size={14} /> {labInfo.focusTag}
+        <div className="pb-16 pt-12 lg:col-span-5 lg:pb-0 lg:pt-0">
+          <p data-hero-fade className="font-mono text-xs uppercase tracking-[0.18em] text-accent">
+            {t.hero.eyebrow}
+          </p>
+          <h1 className="mt-6 font-serif text-[2.5rem] font-medium leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-[3.25rem] xl:text-[3.75rem]">
+            {t.hero.titleLines.map((line) => (
+              <span key={line} className="block overflow-hidden pb-[0.08em]">
+                <span data-hero-line className="block">{line}</span>
+              </span>
+            ))}
+          </h1>
+          <p data-hero-fade className="mt-8 max-w-md text-base leading-relaxed text-muted md:text-lg">
+            {t.hero.lead}
+          </p>
+          <div data-hero-fade className="mt-10 flex flex-wrap gap-8">
+            <Button href="#research">{t.hero.ctaResearch}</Button>
+            <Button href="#members">{t.hero.ctaPeople}</Button>
+          </div>
         </div>
-
-        <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight">
-          聚焦 <br />
-          <span style={{ color: '#ffffff', textShadow: '0 0 20px rgba(251, 191, 36, 0.5), 0 2px 4px rgba(0,0,0,0.3)' }}>
-            颅神经嵴细胞
-          </span>
-        </h1>
-
-        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-          我们致力于结合细胞生物学、空间组学与生物信息学，
-          解析颅颌面发育的细胞命运与组织图谱，揭示颅缝稳态失衡与颅缝早闭的致病机制，
-          并探索骨与组织再生的新策略。
-        </p>
-
-        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-          <Button primary icon={ArrowRight} href="#publications">
-            查看研究成果
-          </Button>
-          <Button icon={Users} href="#members">
-            认识我们的团队
-          </Button>
-        </div>
-      </div>
-
-      <div className="absolute bottom-10 animate-bounce text-sci-primary/60">
-        <ChevronDown size={24} />
       </div>
     </section>
   );

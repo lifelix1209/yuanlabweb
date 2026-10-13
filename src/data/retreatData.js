@@ -1,4 +1,4 @@
-// Lab Retreat 图片数据
+// Lab Retreat 图片数据（descEn 为可选英文字段）
 export const retreatData = [
   {
     id: 1,
@@ -6,6 +6,7 @@ export const retreatData = [
     alt: "Lab retreat group discussion",
     title: "Lab Retreat 2025",
     desc: "科研分享与进展讨论",
+    descEn: "Research talks and progress discussions",
   },
   {
     id: 2,
@@ -13,6 +14,7 @@ export const retreatData = [
     alt: "Team building activity",
     title: "Team Building",
     desc: "协作与凝聚力",
+    descEn: "Collaboration and team spirit",
   },
   {
     id: 3,
@@ -20,6 +22,7 @@ export const retreatData = [
     alt: "Outdoor hike",
     title: "Outdoor",
     desc: "放松与交流",
+    descEn: "Unwinding and conversation",
   },
   {
     id: 4,
@@ -27,6 +30,7 @@ export const retreatData = [
     alt: "Group photo",
     title: "Group Photo",
     desc: "团队合影",
+    descEn: "Group photo",
   },
   {
     id: 5,
@@ -34,6 +38,7 @@ export const retreatData = [
     alt: "Group photo",
     title: "Group Photo",
     desc: "团队合影",
+    descEn: "Group photo",
   },
   {
     id: 6,
@@ -41,5 +46,6 @@ export const retreatData = [
     alt: "Group photo",
     title: "Group Photo",
     desc: "团队合影",
+    descEn: "Group photo",
   },
 ];

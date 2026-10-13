@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 
 const DEFAULT_USERNAME = 'admin';
@@ -19,7 +19,7 @@ export function Login() {
       // 跳转到之前访问的路径，或默认跳转到 /admin
       const redirectPath = sessionStorage.getItem('redirectPath') || '/admin';
       sessionStorage.removeItem('redirectPath');
-      navigate(redirectPath, { replace: true });
+      navigate(redirectPath, { replace: true, viewTransition: true });
     } else {
       setError('用户名或密码错误');
     }
@@ -91,9 +91,9 @@ export function Login() {
 
           {/* 返回首页 */}
           <div className="mt-6 text-center">
-            <a href="/" className="text-sm text-slate-500 hover:text-sci-primary transition-colors">
+            <Link to="/" viewTransition className="text-sm text-slate-500 hover:text-sci-primary transition-colors">
               返回首页
-            </a>
+            </Link>
           </div>
         </div>
       </div>
